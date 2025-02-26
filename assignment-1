@@ -1,0 +1,209 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import imageio
+import os
+
+# Load datasets
+df_life = pd.read_csv("_GM-Life Expectancy- Dataset - v14 - data-for-countries-etc-by-year.csv")
+df_gdp = pd.read_csv("GM-GDP per capita - Dataset - v31 - data-for-countries-etc-by-year.csv")
+df_pop = pd.read_csv("GM-Population - Dataset - v8 - data-for-countries-etc-by-year.csv")
+#df_regions = pd.read_csv("GM-GDP per capita - Dataset - v31 - data-for-regions-by-year.csv")
+
+
+
+
+
+
+print(df_life.columns)
+print(df_gdp.columns)
+print(df_pop.columns)
+print(df_regions.columns)
+
+
+
+
+df = df_life.merge(df_gdp, on=["name", "time"])\
+                    .merge(df_pop, on=["name", "time"])
+
+
+
+
+print(df.columns)
+
+
+
+
+
+
+continent_map = {
+    "Asia": [
+        "Afghanistan", "Armenia", "Azerbaijan", "Bahrain", "Bangladesh", "Bhutan", "Brunei", "Cambodia", "China", 
+        "Cyprus", "Georgia", "India", "Indonesia", "Iran", "Iraq", "Israel", "Japan", "Jordan", "Kazakhstan", 
+        "Kuwait", "Kyrgyz Republic", "Laos", "Lebanon", "Malaysia", "Maldives", "Mongolia", "Myanmar", "Nepal", 
+        "North Korea", "Oman", "Pakistan", "Palestine", "Philippines", "Qatar", "Saudi Arabia", "Singapore", 
+        "South Korea", "Sri Lanka", "Syria", "Tajikistan", "Thailand", "Timor-Leste", "Turkey", "Turkmenistan", 
+        "United Arab Emirates", "Uzbekistan", "Vietnam", "Yemen"
+    ],
+    "Europe": [
+        "Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", 
+        "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", 
+        "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", 
+        "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", 
+        "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"
+    ],
+    "Africa": [
+        "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", 
+        "Chad", "Comoros", "Democratic Republic of Congo", "Djibouti", "Egypt", "Equatorial Guinea", "Eritrea", "Eswatini", 
+        "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Ivory Coast", "Kenya", "Lesotho", "Liberia", 
+        "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", 
+        "Nigeria", "Republic of Congo", "Rwanda", "São Tomé and Príncipe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", 
+        "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe"
+    ],
+    "Americas": [
+        "Argentina", "Bahamas", "Barbados", "Belize", "Bolivia", "Brazil", "Canada", "Chile", "Colombia", "Costa Rica", 
+        "Cuba", "Dominican Republic", "Ecuador", "El Salvador", "Grenada", "Guatemala", "Guyana", "Haiti", "Honduras", 
+        "Jamaica", "Mexico", "Nicaragua", "Panama", "Paraguay", "Peru", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", 
+        "Suriname", "Trinidad and Tobago", "United States", "Uruguay", "Venezuela"
+    ],
+    "Oceania": [
+        "Australia", "Fiji", "Kiribati", "Marshall Islands", "Micronesia", "Nauru", "New Zealand", "Palau", "Papua New Guinea", 
+        "Samoa", "Solomon Islands", "Tonga", "Tuvalu", "Vanuatu"
+    ]
+}
+
+
+country_to_continent = {country: continent for continent, countries in continent_map.items() for country in countries}
+
+
+df["continent"] = df["name"].map(country_to_continent)
+
+
+df["continent"].fillna("Unknown", inplace=True)
+
+
+missing_countries = df[df["continent"] == "Unknown"]["name"].unique()
+if len(missing_countries) > 0:
+    print("Countries without assigned continents:", missing_countries)
+
+
+
+
+
+print(df[df["continent"].isna()]["name"].unique())
+
+
+
+df["continent"].fillna("Unknown", inplace=True)
+
+
+
+
+print(df[["name", "continent"]].drop_duplicates().head(20))
+
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+year = 2000
+df_year = df[df["time"] == year]
+
+
+palette = sns.color_palette("tab10", n_colors=df_year["continent"].nunique())
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df_year, x="GDP per capita growth (%)", y="Life expectancy ",
+                size="Population", hue="continent", alpha=0.6, edgecolor="w", sizes=(10, 1000))
+
+# Customize plot
+plt.xscale("log") 
+plt.xlabel("GDP per Capita (log scale)")
+plt.ylabel("Life Expectancy")
+plt.title(f"Life Expectancy vs. GDP per Capita ({year})")
+plt.legend(title="Region", bbox_to_anchor=(1.05, 1), loc="upper left")
+
+# Save and show the figure
+plt.savefig(f"frame_{year}.png", dpi=300)
+plt.show()
+
+
+
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+
+output_folder = "New folder (3)"
+os.makedirs(output_folder, exist_ok=True) 
+
+
+years = df["time"].unique()
+
+
+x_min, x_max = df["GDP total"].min(), df["GDP total"].max()
+y_min, y_max = df["Life expectancy "].min(), df["Life expectancy "].max()
+
+
+for year in years:
+    df_year = df[df["time"] == year]
+
+   
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=df_year, x="GDP total", y="Life expectancy ",
+                    size="Population", hue="continent", alpha=0.6, edgecolor="w", sizes=(10, 1000))
+
+    
+    plt.xscale("log")  
+    plt.xlabel("GDP per Capita (log scale)")
+    plt.ylabel("Life Expectancy")
+    plt.title(f"Life Expectancy vs. GDP per Capita ({year})")
+    plt.legend(title="Region", bbox_to_anchor=(1.05, 1), loc="upper left")
+
+   
+    plt.xlim(x_min, x_max)
+    plt.ylim(y_min, y_max)
+
+   
+    file_path = os.path.join(output_folder, f"frame_{year}.png")
+    plt.savefig(file_path, dpi=300)
+    plt.close()  
+
+print(f"Frames saved in '{output_folder}' directory with consistent axis limits.")
+
+
+
+import imageio.v2 as imageio
+import os
+
+frames_folder = "New folder (3)"  
+output_folder = os.path.expanduser("New folder (4)")  
+output_gif_path = os.path.join(output_folder, "life_expectancy.gif")
+
+os.makedirs(output_folder, exist_ok=True)
+
+frame_files = sorted([os.path.join(frames_folder, f) for f in os.listdir(frames_folder) if f.endswith(".png")])
+
+
+if not frame_files:
+    raise FileNotFoundError("No PNG frames found in the 'frames' folder.")
+
+F
+with imageio.get_writer(output_gif_path, mode="I", duration=0.5, loop=0) as writer:
+    for frame in frame_files:
+        image = imageio.imread(frame)
+        writer.append_data(image)
+        print(f"Added {frame} to GIF")
+
+print(f"✅ GIF successfully saved as {output_gif_path}")
+
+
+
+
+
+
+
